@@ -2237,6 +2237,18 @@ class AdminTranslationsControllerCore extends AdminController
      */
     public function displayLimitPostWarning($count)
     {
+/*
+ * TODO (one commit for each of these TODO lines, please):
+ *
+ * - Remove all usages of this method.
+ *
+ * - Remove all code calculating $count.
+ *
+ * - Deprecate this method:
+ *   - Use Tools::displayAsDeprecated() (look up how other code uses
+ *     displayAsDeprecated(), there are many deprecated methods already).
+ *   - Make it always returning an empty array.
+ */
         $return = [];
         if ((ini_get('suhosin.post.max_vars') && ini_get('suhosin.post.max_vars') < $count) || (ini_get('suhosin.request.max_vars') && ini_get('suhosin.request.max_vars') < $count)) {
             $return['error_type'] = 'suhosin';
@@ -2249,7 +2261,7 @@ class AdminTranslationsControllerCore extends AdminController
             $return['needed_limit'] = $count + 100;
         }
 
-        return $return;
+        return [];
     }
 
     /**

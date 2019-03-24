@@ -31,6 +31,23 @@
 		{l s='Apache mod_security is activated on your server. This could result in some Bad Request errors'}
 	</div>
 	{/if}
+  {*
+   * TODO: (one commit for each of these TODO lines, please):
+   *
+   * - Change this whole file from indenting with tabs to indenting with spaces.
+   *   One tab = 2 spaces. This should give a commit changing only whitespace.
+   *
+   * - Remove this warning panel and its {if}..{else}..{/if}
+   *
+   * - Make AdminTranslationsController to not calculate $limit_warning or
+   *   any of its fields.
+   *
+   * - Do all the TODOs mentioned below in this file.
+   *
+   * - Remove other dead code, like the commented out global <form>.
+   *
+   * - Restore proper intentation.
+   *}
 	{if !empty($limit_warning)}
 	<div class="alert alert-warning">
 		{if $limit_warning['error_type'] == 'suhosin'}
@@ -58,7 +75,7 @@
 			<p>{l s='Total missing expressions:'} <span class="badge">{l s='%d' sprintf=$missing_translations|array_sum}</p>
 		</div>
 
-		<form method="post" id="{$table}_form" action="{$url_submit|escape:'html':'UTF-8'}" class="form-horizontal">
+		{*<form method="post" id="{$table}_form" action="{$url_submit|escape:'html':'UTF-8'}" class="form-horizontal">*}
 			<div class="panel">
 				<input type="hidden" name="lang" value="{$lang}" />
 				<input type="hidden" name="type" value="{$type}" />
@@ -101,6 +118,19 @@
 			</div>
 			{foreach $tabsArray as $k => $newLang}
 				{if !empty($newLang)}
+        {*
+         * TODO: (one commit for each of these TODO lines, please):
+         *
+         * - Give this <form> a unique ID for each panel.
+         *
+         * - Adjust both Save buttons to send data of just one panel (by using
+         *   this ID or by adjusting the form action).
+         *
+         * - Adjust AdminTranslationsController to accept translations of just
+         *   one panel and make sure it doesn't delete or overwrite all other
+         *   translations.
+         *}
+				<form method="post" id="{$table}_form" action="{$url_submit|escape:'html':'UTF-8'}" class="form-horizontal">
 					<div class="panel">
 						<h3>
 							<a href="#" class="sidetoggle" data-slidetoggle="{$k}-tpl">
@@ -146,9 +176,10 @@
 						</div>
 
 					</div>
+					</form>
 				{/if}
 			{/foreach}
-		</form>
+		{*</form>*}
 	{/if}
 
 {/block}

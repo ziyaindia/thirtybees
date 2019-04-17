@@ -1312,6 +1312,9 @@ class AdminTranslationsControllerCore extends AdminController
         $thmName = str_replace('.', '', Tools::getValue('theme'));
         $kpiKey = substr(strtoupper($thmName.'_'.Tools::getValue('lang')), 0, 16);
 
+        $translationsArray = array();
+	    $translationsArray = include $filePath;
+
         if ($fd = fopen($filePath, 'w')) {
             // Get value of button save and stay
             $saveAndStay = Tools::isSubmit('submitTranslations'.$type.'AndStay');
@@ -1330,26 +1333,30 @@ class AdminTranslationsControllerCore extends AdminController
             );
 
             // Get all POST which aren't empty
-            $toInsert = [];
             foreach ($_POST as $key => $value) {
                 if (!empty($value)) {
-                    $toInsert[$key] = $value;
+                    $translationsArray[$key] = $value;
                 }
             }
 
             ConfigurationKPI::updateValue('FRONTOFFICE_TRANSLATIONS_EXPIRE', time());
             ConfigurationKPI::updateValue('TRANSLATE_TOTAL_'.$kpiKey, count($_POST));
-            ConfigurationKPI::updateValue('TRANSLATE_DONE_'.$kpiKey, count($toInsert));
+            ConfigurationKPI::updateValue('TRANSLATE_DONE_'.$kpiKey, count($_POST));
 
             // translations array is ordered by key (easy merge)
-            ksort($toInsert);
+            ksort($translationsArray);
             $tab = $translationInformation['var'];
             fwrite($fd, "<?php\n\nglobal \$".$tab.";\n\$".$tab." = array();\n");
-            foreach ($toInsert as $key => $value) {
+            foreach ($translationsArray as $key => $value) {
                 fwrite($fd, '$'.$tab.'[\''.pSQL($key, true).'\'] = \''.pSQL($value, true).'\';'."\n");
             }
-            fwrite($fd, "\n?>");
+            fwrite($fd, "\n\nreturn \$".$tab.";\n");
             fclose($fd);
+
+            // Reset opcache
+            if (function_exists('opcache_reset')) {
+                opcache_reset();
+            }
 
             // Redirect
             if ($saveAndStay) {
@@ -1949,7 +1956,6 @@ class AdminTranslationsControllerCore extends AdminController
                 'missing_translations' => $missingTranslationsFront,
                 'count'                => $count,
                 'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
-                'limit_warning'        => $this->displayLimitPostWarning($count),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'tabsArray'            => $tabsArray,
             ]
@@ -2236,19 +2242,9 @@ class AdminTranslationsControllerCore extends AdminController
      */
     public function displayLimitPostWarning($count)
     {
-        $return = [];
-        if ((ini_get('suhosin.post.max_vars') && ini_get('suhosin.post.max_vars') < $count) || (ini_get('suhosin.request.max_vars') && ini_get('suhosin.request.max_vars') < $count)) {
-            $return['error_type'] = 'suhosin';
-            $return['post.max_vars'] = ini_get('suhosin.post.max_vars');
-            $return['request.max_vars'] = ini_get('suhosin.request.max_vars');
-            $return['needed_limit'] = $count + 100;
-        } elseif (ini_get('max_input_vars') && ini_get('max_input_vars') < $count) {
-            $return['error_type'] = 'conf';
-            $return['max_input_vars'] = ini_get('max_input_vars');
-            $return['needed_limit'] = $count + 100;
-        }
-
-        return $return;
+        Tools::displayAsDeprecated('Limit Post Warning is no longer used, now translating each panel separately.');
+        
+        return [];
     }
 
     /**
@@ -2473,7 +2469,6 @@ class AdminTranslationsControllerCore extends AdminController
             [
                 'count'                => $count,
                 'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
-                'limit_warning'        => $this->displayLimitPostWarning($count),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'tabsArray'            => $tabsArray,
                 'missing_translations' => $missingTranslationsBack,
@@ -2544,7 +2539,6 @@ class AdminTranslationsControllerCore extends AdminController
             [
                 'count'                => count($stringToTranslate),
                 'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
-                'limit_warning'        => $this->displayLimitPostWarning(count($stringToTranslate)),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'errorsArray'          => $stringToTranslate,
                 'missing_translations' => $countEmpty,
@@ -2642,7 +2636,6 @@ class AdminTranslationsControllerCore extends AdminController
             $this->tpl_view_vars,
             [
                 'count'                => $count,
-                'limit_warning'        => $this->displayLimitPostWarning($count),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'tabsArray'            => $tabsArray,
                 'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
@@ -2722,7 +2715,6 @@ class AdminTranslationsControllerCore extends AdminController
         $this->tpl_view_vars = array_merge(
             $this->tpl_view_vars,
             [
-                'limit_warning'        => $this->displayLimitPostWarning($this->total_expression),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'tinyMCE'              => $this->getTinyMCEForMails($this->lang_selected->iso_code),
                 'mail_content'         => $this->displayMailContent($coreMails, $subjectMail, $this->lang_selected, 'core', $this->l('Core emails')),
@@ -3250,7 +3242,6 @@ class AdminTranslationsControllerCore extends AdminController
                 [
                     'default_theme_name'   => static::DEFAULT_THEME_NAME,
                     'count'                => $this->total_expression,
-                    'limit_warning'        => $this->displayLimitPostWarning($this->total_expression),
                     'mod_security_warning' => Tools::apacheModExists('mod_security'),
                     'textarea_sized'       => AdminTranslationsControllerCore::TEXTAREA_SIZED,
                     'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
@@ -3420,7 +3411,6 @@ class AdminTranslationsControllerCore extends AdminController
             $this->tpl_view_vars,
             [
                 'count'                => count($tabsArray['PDF']),
-                'limit_warning'        => $this->displayLimitPostWarning(count($tabsArray['PDF'])),
                 'mod_security_warning' => Tools::apacheModExists('mod_security'),
                 'tabsArray'            => $tabsArray,
                 'cancel_url'           => $this->context->link->getAdminLink('AdminTranslations'),
